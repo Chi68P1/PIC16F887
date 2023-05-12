@@ -1,0 +1,160 @@
+#include<htc.h>
+#include<stdio.h>
+#include<math.h>
+#include<stdlib.h>
+#include<string.h>
+#include "lcd(16).h"
+
+#define _XTAL_FREQ 20000000
+
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+unsigned int dem,deg_input;
+unsigned int set,i,t;
+bit flag;
+char rxdata;
+char chuoi[3];
+char chuoi_deg[3];
+char ptr;
+char *ptr1;
+void goc_quay(int deg);
+void tx_init();
+void rx_init();
+void sendchar (char c);
+void sendstring (const char* s);
+void main(){
+
+	lcd_init();
+	ANSEL = ANSELH=0;
+	TRISE1=0;
+	RE1=0;
+	
+    tx_init();
+    rx_init();
+
+	T2CKPS1=0; 	// CHON GIA TRI BO PRESCALER LA :1
+	T2CKPS0=0;
+	
+	PR2 = 49;	// DAT GIA TRI CHO PR2
+	
+	TOUTPS3=0;	// DAT GIA TRI CHO POSCALER LA :1
+	TOUTPS2=0;
+	TOUTPS1=0;
+	TOUTPS0=0;
+	
+	TMR2IF=0;	// CAI DAT NGAT CHO TIMER2
+	TMR2IE=1;
+	PEIE=1;
+	GIE=1;
+	
+	TMR2=0;
+	RE1 = 0;
+	TMR2ON=1;	// CHAY TIMER 2
+	while (1) 
+		{   
+__delay_ms(100);		
+	if(flag == 1)
+	{
+
+	
+		deg_input = strtol(chuoi, &ptr1, 10);
+		//lcd_gotoxy(0,0);
+		//printf("%d",deg_input);
+		goc_quay(deg_input);
+		
+	
+	}
+//return;
+		}
+	}
+void tx_init(){
+	SPBRGH =0x02;
+	SPBRG = 0x08;	
+	BRGH=1;
+	BRG16= 1;
+	
+	SYNC=0;
+	SPEN=1;
+	
+	TX9=0;
+	
+	TXEN=1;
+}
+void rx_init(){
+
+	SPBRGH =0x02;  // calculate --> 520 <-> br:9600
+	SPBRG = 0x08;	
+	BRGH=1;
+	BRG16= 1;
+	
+	SYNC=0;
+	SPEN=1;
+	
+	RCIF=0;
+	RCIE=1;
+	PEIE=1;
+	GIE=1;
+	
+	RX9=0;
+	
+	CREN=1;
+}	
+void interrupt ngat ()
+{
+    if (TMR2IF)
+    	{   
+			TMR2IF=0;
+			dem++;
+			if(dem == set){RE1 = 0;}
+		    else if(dem == 2000){dem = 0; RE1 = 1;}
+        }
+   
+		
+    else if (RCIF)
+		{
+			rxdata = RCREG;
+			RCIF=0;
+			chuoi[ptr] = rxdata;	// Neu khong phai la 'A' hoac 'B' thi cong don	
+			ptr++;
+			
+			if(ptr ==3)// nhap xxx goc quay
+				{
+				flag =1;
+				//sendstring(chuoi);
+				//sendchar('\n');
+				}
+			if (rxdata == 'R')// Reset
+        	{	
+				goc_quay(0);
+				//sendstring("Reset Done");
+                //sendchar('\n');
+				//lcd_gotoxy(0,0);
+				//printf("Reset Done");
+                               
+	            for (ptr=10;ptr>0;ptr--)
+	                { 	//XOA SACH CA CHUOI DE THUC HIEN LAI NHUNG LAN SAU
+						chuoi[ptr]=0;
+	                }
+
+			}
+	 						
+    	}
+}
+void goc_quay(int deg)
+{
+/////////////////////////
+	set = ((1000.0/180.0)*deg+1000.0)/10.0;
+}
+void sendchar (char c){		
+	while (TXIF==0){}
+	TXREG = c;
+}
+
+void sendstring (const char* s){
+	while(*s){
+		sendchar(*s++);
+	}
+}
+void putch(char c){
+lcd_putc(c);
+}

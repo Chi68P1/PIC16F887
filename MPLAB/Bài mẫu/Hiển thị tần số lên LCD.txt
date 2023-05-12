@@ -1,0 +1,78 @@
+#include<htc.h>
+#include<stdio.h>
+#include<math.h>
+#include "lcd(16).h"
+#define _XTAL_FREQ 20000000
+
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+
+float tan_so;
+long int xung;
+char dem, sample;
+
+void main()
+{
+	
+	/// THIET LAP NGO RA VA LCD
+	ANSEL = ANSELH=0;
+	lcd_init();
+	
+	////////////////////////////////////////////////////////////
+    //// config timer 1 - counter
+    TRISC0 = 1; //input T1CKI
+	TMR1CS = 1; // counter
+    T1CKPS1 = 0;  // prescale 1:1
+	T1CKPS1 = 0;
+    T1SYNC  = 1;
+    TMR1GE  = 0; //non-control gate
+
+	TMR1H = 0;  //clear TMR1
+	TMR1L = 0;
+    
+    //// config timer0 
+    T0CS = 0; //timer 
+    PSA  = 0;
+
+    PS2 = 0;
+    PS1 = 1;
+    PS0 = 1;
+    TMR0  = 7;
+  /// config interrupt timer 0
+	T0IE = 1;
+    T0IF = 0;
+	GIE = 1;
+  ////enable timter 1
+    TMR1ON = 1;
+	
+	while(1)
+		{
+			if(sample == 20)
+			{
+				tan_so = 10.0*(xung/20.0);
+				lcd_gotoxy(0,0);
+				printf("f:%3.2f",tan_so);
+				xung = 0;
+				sample = 0;
+			}
+		}
+	}
+
+void interrupt ngat()
+	{	if(T0IF && T0IE)
+		{	
+			dem++;
+			if(dem == 125)  // 100ms
+			{   sample++;
+				xung = xung+TMR1;
+				TMR1H = TMR1L = 0;
+				dem  = 0;
+			}
+        TMR0 = 7; // dat lai thanh ghi timer 0
+		T0IF = 0; // clear flag int
+		}
+		
+}
+void putch(char c){	
+	lcd_putc(c);		
+}

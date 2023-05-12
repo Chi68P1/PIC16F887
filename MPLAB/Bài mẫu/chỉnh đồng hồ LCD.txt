@@ -1,0 +1,104 @@
+#include<htc.h>
+#include<stdio.h>
+#include<math.h>
+#include "lcd(16).h"
+#define _XTAL_FREQ 20000000
+
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+
+int h=0,m=0,s=0,ms=0,h1=0,m1=0,s1=0,ms1=0;
+char dem=0,k=1,l=0;
+bit b2,b3,b1,b0;
+
+void main()
+{
+	
+	/// THIET LAP NGO RA VA LCD
+	ANSEL = ANSELH=0;
+	lcd_init();
+	
+
+	TRISA0 = TRISA1 = TRISA2 = TRISA3 =1;
+	b2 = RA2; b3 = RA3; b1 = RA1; b0 = RA0;
+
+	////////////////////////////////////////////////////////////
+    //// config timer 1 - counter
+	TMR1CS = 0; // timer
+    T1CKPS1 = 0;  // prescale 1:1
+	T1CKPS1 = 0;
+    T1SYNC  = 1;
+    TMR1GE  = 0; //non-control gate
+
+	TMR1=15535;
+    
+    /////////////// Ngat timer1 
+	TMR1IF=0;
+	TMR1IE=1;
+	PEIE=1;
+	GIE=1;
+	
+	
+ 
+
+	while(1)
+		{
+				 if(b1 != RA1)
+					{k=0;
+					TMR1ON = 1;}
+				if(b2 != RA2 && l==0)  {
+				 l=1;
+				 h1=h;
+				 m1=m;
+				 s1=s;
+				 ms1=ms;
+				 }
+				if(b3 != RA3) h=m=s=ms=h1=m1=s1=ms1=0; 
+			    
+				 
+				lcd_gotoxy(0,0);
+				printf("%02d:%02d:%02d:%02d",h,m,s,ms);
+				lcd_gotoxy(0,1);
+				printf("%02d:%02d:%02d:%02d",h1,m1,s1,ms1);
+				if(b2 != RA2==0)  {
+				 l=0;
+				}
+		}
+}	
+
+void interrupt ngat()
+	{	if(TMR1IF && TMR1IE)
+		{	
+			if (k==0)
+		{
+			dem++;
+			if(dem == 1)  // 10ms
+			{   
+				ms=ms+1;
+				dem=0;
+			}	
+			if (ms==99) 
+				{s+=1;
+				ms=0;
+				}
+			if (s==59) 
+				{m+=1;
+				s=0;
+				}
+			if (m==59) 
+				{h+=1;
+				m=0;
+				}
+			if (h==23) 
+				{s+=1;
+				h=0;	
+				}	
+	}
+       	TMR1=15535;
+		TMR1IF  = 0; // clear flag int
+		}
+		
+}
+void putch(char c){	
+	lcd_putc(c);		
+}

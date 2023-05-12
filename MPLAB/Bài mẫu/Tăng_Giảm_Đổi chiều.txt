@@ -1,0 +1,55 @@
+#include<htc.h>
+#include<stdio.h>
+#include<math.h>
+#define _XTAL_FREQ 4000000
+int d=0;
+int k=0;
+int toc_do;
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+void main() 
+{
+	ANSEL = ANSELH =0;
+	//set cac cong input
+	TRISB1=TRISB2=TRISB0=1;
+	//set cac cong output dieu chinh PWM
+	TRISC1=0;
+	TRISC2=0;
+	//set cac cong dao chieu dong co
+	TRISC3=0;
+	TRISC4=0;
+	PR2=99;   // chu ky pwm
+	T2CKPS1 = 0;  // prescale
+	T2CKPS0 = 0;
+	CCP1CON=0b00001100;///su dung tinh nang pwm muc thap ||0x0C->0b00001100: muc cao
+	CCPR1L= 0 ;  // set duty cycle  0
+	TMR2ON=1;
+	RC3=0;
+	RC4=1;
+	while(1)
+	{	
+		if (d>100) {d=100;};
+		if (d<0)   {d=0;};
+		
+		if (RB0==1 && k==0)
+		{
+			k=1;
+			d=d+10;
+		}
+		if (RB1==1 && k==0)
+		{
+			k=1;
+			d=d-10;
+		}
+		if (RB0==0 && RB1==0 && RB2==0)
+		{k=0;}
+		if (RB2==1 && k==0)
+		{
+			RC3=!RC3;
+			RC4=!RC4;
+			__delay_ms(200);
+		}
+		toc_do=99*d/100;
+		CCPR1L=toc_do;
+	}
+}

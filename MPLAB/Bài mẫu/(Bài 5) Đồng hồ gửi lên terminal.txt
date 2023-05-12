@@ -1,0 +1,148 @@
+#include<htc.h>
+#include<stdio.h>
+#include<math.h>
+#include<stdlib.h>
+#include<string.h>
+#include "lcd(16).h"
+#define _XTAL_FREQ 20000000
+
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+
+char rxdata;
+//unsigned int dem;
+
+void sendchar (char c);
+void sendstring (const char* s);
+void tx_init();
+void rx_init();
+
+char buffer1[6];
+char buffer2[6];
+char buffer3[6];
+char ptr;
+
+int h=0,m=0,s=0,ms=0,h1=0,m1=0,s1=0,ms1=0;
+char dem=0,k=1,l=0;
+bit b2,b3,b1,b0;
+
+void main()
+{
+	
+	/// THIET LAP NGO RA VA LCD
+	ANSEL = ANSELH=0;
+	lcd_init();
+	
+	tx_init();
+	rx_init();
+
+    //// config timer 1 - counter
+	TMR1CS = 0; // timer
+    T1CKPS1 = 0;  // prescale 1:1
+	T1CKPS1 = 0;
+    T1SYNC  = 1;
+    TMR1GE  = 0; //non-control gate
+
+	TMR1=15535;
+    
+    /////////////// Ngat timer1 
+	TMR1IF=0;
+	TMR1IE=1;
+	PEIE=1;
+	GIE=1;
+	
+	k=0;
+	TMR1ON = 1;
+ 
+
+	while(1)
+		{
+						
+				lcd_gotoxy(0,0);
+				printf("%02d:%02d:%02d",h,m,s);
+				sprintf(buffer1,"%02d",h);
+				sprintf(buffer2,":%02d",m);
+				sprintf(buffer3,":%02d",s);
+				sendstring(buffer1);
+				sendstring(buffer2);
+				sendstring(buffer3);
+				sendstring("\n");
+				__delay_ms(5000);
+		}
+}	
+
+void interrupt ngat()
+	{	if(TMR1IF && TMR1IE)
+		{	
+			if (k==0)
+		{
+			dem++;
+			if(dem == 1)  // 10ms
+			{   
+				ms=ms+1;
+				dem=0;
+			}	
+			if (ms==100) 
+				{s+=1;
+				ms=0;
+				}
+			if (s==60) 
+				{m+=1;
+				s=0;
+				}
+			if (m==60) 
+				{h+=1;
+				m=0;
+				}
+
+	}
+       	TMR1=15535;
+		TMR1IF  = 0; // clear flag int
+		}
+		
+}
+void putch(char c){	
+	lcd_putc(c);		
+}
+void sendchar (char c){		
+	while (TXIF==0){}
+	TXREG = c;
+}
+
+void sendstring (const char* s){
+	while(*s){
+		sendchar(*s++);
+	}
+}
+void tx_init(){
+	SPBRGH =0x02; 
+	SPBRG = 0x08;	
+	BRGH=1;
+	BRG16= 1;
+	
+	SYNC=0;
+	SPEN=1;
+	
+	TX9=0;
+	
+	TXEN=1;
+}
+void rx_init(){
+
+	SPBRGH =0x02;  // calculate --> 520 <-> br:9600
+	SPBRG = 0x08;	
+	BRGH=1;
+	BRG16= 1;
+	
+	SYNC=0;
+	SPEN=1;
+	
+	RCIF=0;
+	RCIE=1;
+	PEIE=1;
+	GIE=1;
+	
+	RX9=0;
+	
+	CREN=1;	
+}

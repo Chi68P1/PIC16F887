@@ -1,0 +1,165 @@
+
+#include <htc.h>
+#include <stdio.h>
+#include <stdlib.h> // CAN KHAI BAO HAM NAY DE DUNG HAM ATOI VA ATOF
+#include <math.h>
+#include <string.h>
+#include<conio.h>
+#define _XTAL_FREQ 20000000
+
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+
+
+char dem =0;
+char rxdata;
+
+char chuoi[10]; //Khai bao mang chuoi gom 10 phan tu de nhan cong don chuoi lai
+char ptr;	//Khai bao bien con tro de xu ly chuoi
+
+
+void sendchar (char c);
+void sendstring (const char* s);
+
+int pwm1;
+int pwm2;
+
+void loadpwm (int us1, int us2);
+
+
+void main(){
+	
+	ANSEL = ANSELH=0;
+	TRISE1=0;
+	RE1=0;
+	
+	TRISB=0;
+	
+	// toc do baud 9600
+	BRGH = 1;
+	BRG16 = 1;
+	
+	SPBRGH=0X02;
+	SPBRG=0X08;
+	////////////////
+	//==== KHOI DONG BO TRUYEN BAT DONG BO ========
+	SYNC = 0;
+	SPEN=1;
+	////////////////
+	//==== THIET LAP NGAT NHAN ====================
+	RCIF=0;
+	RCIE=1;
+	PEIE=1;
+	GIE=1;
+	
+	////////////////
+	//==== KHONG TRUYEN NHAN 9 BIT ================
+	TX9=0;
+	RX9=0;
+	
+	///////////////
+	//==== CHO PHEP TRUYEN VA NHAN ================
+	TXEN=1;
+	CREN=1;
+	///========= THIET LAP PWM ====================
+	CCP1CON =0X0C;	// CHON CHE DO PWM
+	CCP2CON =0X0C;
+	
+	TRISC1=0;	// KHAI BAO HAI CHAN CCP1 VA CCP2 LA OUTPUT
+	TRISC2=0;
+	TRISC3=0;	
+	TRISC4=0;
+    
+	T2CKPS1=0;	// CHON TIMER2 PRESCALE VALUE =4
+	T2CKPS0=1;
+	
+	PR2= 249;	// DINH CHU KY PWM = 200 uS
+	TMR2ON=0;
+	
+    RC3=0;
+    RC4=0;
+    CCPR1L =200;
+	
+	
+	//===========================================
+	while(1){	// CHUONG TRINH CHINH
+	
+    }
+
+}
+
+// HAM NAY CO TAC DUNG GUI MOT KY TU RA CONG USART
+void sendchar (char c){		
+	while (TXIF==0){}
+	TXREG = c;
+}
+
+// HAM NAY CO TAC DUNG GUI MOT CHUOI KY TU RA USART	
+void sendstring (const char* s)
+{
+	while(*s){
+		sendchar(*s++);
+	}
+}
+
+// SU DUNG HAM PRINT CHO CONG NAO
+
+void interrupt ngat (){
+	if (RCIF && RCIE)
+    {
+		// NHAN KY TU	
+		rxdata=RCREG;
+		
+		// GUI NGUOC LEN
+		
+        chuoi[ptr] = rxdata;	// Neu khong phai la 'A' hoac 'B' thi cong don	
+        ptr++;
+        if (rxdata == 'P') 
+        {
+            sendstring(chuoi);
+            sendchar('\n');
+            TMR2ON= 0;
+            RC3=0;RC4=0;
+            for (ptr=10;ptr>0;ptr--)
+                { 	//XOA SACH CA CHUOI DE THUC HIEN LAI NHUNG LAN SAU
+					chuoi[ptr]=0;
+                }
+        }
+        if (rxdata == 'S') 
+        {
+            sendstring(chuoi);
+            sendchar('\n');
+            TMR2ON= 1;
+            RC3=1;RC4=0;
+            for (ptr=10;ptr>0;ptr--)
+                { 	//XOA SACH CA CHUOI DE THUC HIEN LAI NHUNG LAN SAU
+					chuoi[ptr]=0;
+                }
+        }
+		if (rxdata == 'R')
+        {	
+				sendstring(chuoi);
+                sendchar('\n');
+                        
+                RC3=!RC3;RC4=!RC4;
+                
+            for (ptr=10;ptr>0;ptr--)
+                { 	//XOA SACH CA CHUOI DE THUC HIEN LAI NHUNG LAN SAU
+					chuoi[ptr]=0;
+                }
+		}
+		if (rxdata == 'L')
+        {	
+				sendstring(chuoi);
+                sendchar('\n');
+                               
+                RC3=!RC3;RC4=!RC4;
+            for (ptr=10;ptr>0;ptr--)
+                { 	//XOA SACH CA CHUOI DE THUC HIEN LAI NHUNG LAN SAU
+					chuoi[ptr]=0;
+                }
+			
+		}
+	}
+}
+

@@ -1,0 +1,115 @@
+#include<htc.h>
+#include<stdio.h>
+#include "lcd(16).h"
+
+#define _XTAL_FREQ 20000000	
+
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+
+unsigned int nut=0,nut_old=0;
+unsigned int dem;
+
+char rxdata;
+void sendchar (char c);
+void sendstring (const char* s);
+void tx_init();
+void rx_init();
+
+char buffer[6];
+char ptr;
+char chuoi[10];
+
+void main()
+{
+tx_init();
+rx_init();
+lcd_init();
+ANSEL = ANSEL = 0;
+TRISA4 = 1;
+
+T0CS = 1;
+T0SE=0;  //CANH XUONG
+PSA = 1;
+
+/* PS2 = 0;
+PS1 = 1;
+PS0 = 0;*/
+
+T0IE = 1;
+T0IF = 0;
+GIE = 1;
+
+TMR0=0;
+while(1)
+{	
+	__delay_ms(20);
+	nut=dem*256 + TMR0;
+	
+	lcd_gotoxy(0,0);
+	printf("so lan bam: %d",nut);
+	if (nut_old!=nut)
+	{
+	nut_old = nut;
+	sprintf(chuoi,"%d",nut); // gan chuoi la bien nut
+	sendstring("\n so lan bam nut: "); 
+	sendstring(chuoi); 
+	}
+}
+}
+void interrupt ngat()
+{
+	if(T0IF && T0IE)
+	{
+		dem++;
+		if(dem == 256)
+			{
+			dem = 0;
+			}  
+	}
+	T0IF = 0;
+}
+void putch(char c)
+	{lcd_putc(c);}
+void sendchar (char c){		
+	while (TXIF==0){}
+	TXREG = c;
+}
+
+void sendstring (const char* s){
+	while(*s){
+		sendchar(*s++);
+	}
+}
+void tx_init(){
+	SPBRGH =0x02;
+	SPBRG = 0x08;	
+	BRGH=1;
+	BRG16= 1;
+	
+	SYNC=0;
+	SPEN=1;
+	
+	TX9=0;
+	
+	TXEN=1;
+}
+void rx_init(){
+
+	SPBRGH =0x02;  // calculate --> 520 <-> br:9600
+	SPBRG = 0x08;	
+	BRGH=1;
+	BRG16= 1;
+	
+	SYNC=0;
+	SPEN=1;
+	
+	RCIF=0;
+	RCIE=1;
+	PEIE=1;
+	GIE=1;
+	
+	RX9=0;
+	
+	CREN=1;	
+}

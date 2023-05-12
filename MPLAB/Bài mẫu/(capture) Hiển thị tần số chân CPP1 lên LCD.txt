@@ -1,0 +1,65 @@
+#include<htc.h>
+#include<stdio.h>
+#include<math.h>
+#include "lcd(16).h"
+#define _XTAL_FREQ 20000000
+
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+
+unsigned int dem;
+long int CCPR1_old = 0;
+long float t, tan_so;
+
+void main()
+{	
+	/// THIET LAP NGO RA VA LCD
+	ANSEL = ANSELH=0;
+	lcd_init();
+
+    //// config timer 1 - counter
+    TRISC2 = 1; //input CCP1
+	////enable timter 1
+    TMR1ON = 1;
+	
+	TMR1CS = 0;
+	T1CKPS1 = 0;  ///1:1
+	T1CKPS0 = 0;
+	T1SYNC=1;		// KHONG DONG BO
+	
+	TMR1GE= 0;		// KHONG DUNG CONG GATE DIEU KHIEN
+	TMR1H = 0;
+	TMR1L = 0;
+	
+	////KHOI TAO CCP1
+	CCP1CON = 0b00000101;
+	CCPR1H = CCPR1L = 0;
+
+  	/// config interrupt CCP1
+	CCP1IE = 1;
+    CCP1IF = 0;
+	PEIE = 1;
+	GIE = 1;
+
+	
+	while(1)
+		{
+			t = dem/5000000.0;
+			tan_so = 1/t;
+			lcd_gotoxy(0,0);
+			printf("f:%3.2f",tan_so);
+		}
+	}
+
+void interrupt ngat()
+	{	if(CCP1IF && CCP1IE)
+		{	
+			dem=CCPR1 - CCPR1_old;
+			CCPR1_old=CCPR1;
+		}
+		CCP1IF = 0; // clear flag int
+		
+}
+void putch(char c){	
+	lcd_putc(c);		
+}

@@ -1,0 +1,37 @@
+#include<htc.h>
+#include<stdio.h>
+#include<math.h>
+#define _XTAL_FREQ 20000000
+#include "lcd(16).h"
+
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+void main() 
+{
+lcd_init();
+ANSEL = ANSELH =0;
+TRISC2=0;  // output
+PR2=249;   // chu ky pwm
+T2CKPS1 = 0;  // prescale
+T2CKPS0 = 0;
+CCP1CON=0b00001110;///su dung tinh nang pwm muc thap ||0x0C->0b00001100: muc cao
+CCPR1L= 50 ;    // set duty cycle  70%
+TMR2ON=1;
+while(1)
+	{if (RB0==0)
+		{
+			while(RB0==0)
+			{}
+			if (RB0 ==1)
+			{
+				CCPR1L = CCPR1L + 25;
+					
+					if (CCPR1L>249)
+					{
+						CCPR1L= 0 ;
+					}
+			}
+		
+		}
+	}
+}

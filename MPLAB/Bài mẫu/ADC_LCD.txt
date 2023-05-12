@@ -1,0 +1,84 @@
+#include<htc.h>
+#include<stdio.h>
+#include <math.h>
+#include <stdlib.h>
+#include "lcd(16).h"
+#define _XTAL_FREQ 20000000
+
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_ON & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+ char chuc, dv;
+ int adc;
+ float res;
+unsigned char maled[10]={0xC0,0xF9,0xA4,0xB0,0x99,0x92,0x82,0xF8,0x80,0x90};
+void hienthi();
+void main()
+ {
+
+   //TRISB = 0b00000000;
+	 TRISB1 = TRISB2 = 0;
+   //RB1 = RB2  = 1;
+   
+
+   TRISC = 0x00;
+
+	lcd_init();
+	TRISA0=1;/// khoi tao ngo vao
+	ANS0=1;////khoi tao anolog
+	/// thiet lap adc qua viec thiet lap adcs1:adcs0
+	ADCS1=1;//// lua chon tan so fosc/32
+	ADCS0=0;
+	/// lua chon dien ap tham chieu, co´ 2 nguôn, nguô`n nôi va nguon ngoai
+	/// neu su dung nguon tham chieu ngoai thi noi dien ao tham chieu vao chan vref+- 
+	// neu su dung tham chieu ngoai thi khai bao VCFG1=1; VCFG0=1;
+	VCFG1=0; VCFG0=0;/// tham chieu trong
+	/// lua chon kênh do , duoc quy dinh boi 4bit CHS3:0
+	/// de chon nhie kenh thi` cho tung kenh hoat dong roi tat thong qua cho chuyen doi kenh nay xong thi qua kenh kia bang viec khai bao lai chs3:0
+	CHS3=CHS2=CHS1=CHS0=0;
+	//// lua chon dinh dang ket qua 10bi hay 8 bit va dinh dang ben trai hay ben phai
+	//// lay 10 bit thi dinh dang ben phai, ADRESH*256+ADREH
+	/// lay 8bit thi dinh dang ben tra´i, luc nay thi lay ADRESH
+	ADFM=1;// dinh dang phai 10 bit
+	ADON=1;//// on bo ADC
+
+	///// chowf thoi gian chuyen doi, nho nhat la` 4.67ms
+	
+	////bat dau chuyen doi bang viec set bit GODONE=1;
+
+lcd_gotoxy(0,0);
+printf("adc:");
+GO_nDONE=1;
+ while(1)
+{    
+	 /// chowf cho ket qua chuyen doi xong, co 2 cach ,1 la dung ngat, 2 la cho thong thuong
+	__delay_ms(10);
+     
+		while (GO_nDONE==1)
+	{
+		/// khong la gi het , cho chuyen doi xong
+	}
+/// doc ket qua
+  adc = ADRESH*256 + ADRESL;	
+  res = ((adc/1023.0)*5.0);
+
+  chuc =  ((int)res)/10;
+  dv   =  ((int)res)%10;
+  GO_nDONE=1;
+lcd_gotoxy(0,1);
+printf("%3.1f",res);
+hienthi();
+}
+}
+void putch(char c)
+	{lcd_putc(c);}
+void hienthi()
+{
+	PORTB = 0b00001101;
+ //   RB2 = 1; RB1 = 0;
+	PORTC = maled[dv];
+	__delay_ms(50);
+
+   	PORTB = 0b00001011;
+	PORTC = maled[chuc];
+	__delay_ms(50);
+}

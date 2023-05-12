@@ -1,0 +1,135 @@
+#include<htc.h>
+#include<stdio.h>
+#include<math.h>
+#define _XTAL_FREQ 20000000
+#include "lcd(16).h"
+#include <string.h>
+#include <stdlib.h> 
+
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+
+unsigned int dem;
+char rxdata;
+
+char chuoi[10]; //Khai bao mang chuoi gom 10 phan tu de nhan cong don chuoi lai
+char chuoi1[10];
+char ptr;	
+
+
+int pwm1=0;
+int pwm2=0;
+
+void sendchar (char c);
+void sendstring (const char* s);
+
+void load_pwm_10bit(unsigned int VAL)
+{
+	// 10 bit
+	CCPR1L = VAL/4;  // 
+	DC1B1 = 0;
+	DC1B0 = 0;
+	if ((VAL & 1)==1) DC1B0=1;
+	if ((VAL & 2)==2) DC1B1=1;
+	//8 bit 
+	//CCPR1L = VAL;
+	TMR2ON=1;
+}
+
+void main() 
+{
+	lcd_init();
+	ANSEL = ANSELH =0;
+
+
+	// toc do baud 9600
+	BRGH = 1;
+	BRG16 = 1;
+	
+	SPBRGH=0X02;
+	SPBRG=0X08;
+	////////////////
+	//==== KHOI DONG BO TRUYEN BAT DONG BO ========
+	SYNC = 0;
+	SPEN=1;
+	////////////////
+	//==== THIET LAP NGAT NHAN ====================
+	RCIF=0;
+	RCIE=1;
+	PEIE=1;
+	GIE=1;
+	
+	////////////////
+	//==== KHONG TRUYEN NHAN 9 BIT ================
+	TX9=0;
+	RX9=0;
+	
+	///////////////
+	//==== CHO PHEP TRUYEN VA NHAN ================
+	TXEN=1;
+	CREN=1;
+
+	TRISC1=0;
+	TRISC2=0;  // output
+	PR2=124;   // chu ky pwm 10KHz
+	T2CKPS1 = 0;  // prescale
+	T2CKPS0 = 1;
+	CCP1CON=0b00001100;///su dung tinh nang pwm muc thap ||0x0C->0b00001100: muc cao
+	CCP1CON=0b00001100;
+
+	TMR2ON=1;
+
+
+while(1)
+{
+	__delay_ms(10);
+	//dem++;
+	load_pwm_10bit(dem);
+}
+}
+// HAM NAY CO TAC DUNG GUI MOT KY TU RA CONG USART
+void sendchar (char c){		
+	while (TXIF==0){}
+	TXREG = c;
+}
+
+// HAM NAY CO TAC DUNG GUI MOT CHUOI KY TU RA USART	
+void sendstring (const char* s)
+{
+	while(*s){
+		sendchar(*s++);
+	}
+}
+
+// SU DUNG HAM PRINT CHO CONG NAO
+
+void interrupt ngat(){
+	if (RCIF && RCIE)
+    {
+		// NHAN KY TU	
+		rxdata=RCREG;
+		
+		// GUI NGUOC LEN
+		
+        chuoi[ptr] = rxdata;		
+        ptr++;
+        
+		if (strlen(chuoi)==3) //nhập xx%
+        {	
+				
+                
+                double pwm1 =atoi(chuoi); 		
+                pwm2=(pwm1*125*0.01);
+                dem =pwm2;
+				dem = dem*4;
+                sprintf(chuoi1,"%d\n",pwm2);
+                sendstring(chuoi1);
+               
+                
+            for (ptr=10;ptr>0;ptr--)
+                { 	//XOA SACH CA CHUOI DE THUC HIEN LAI NHUNG LAN SAU
+					chuoi[ptr]=0;
+                }
+		}
+	}
+}

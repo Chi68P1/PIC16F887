@@ -1,0 +1,85 @@
+#include<htc.h>
+#include<stdio.h>
+#include<math.h>
+#include "lcd(16).h"
+#define _XTAL_FREQ 20000000
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+
+unsigned int dem;
+unsigned int xung;
+float v;
+void main() 
+{
+
+	lcd_init();
+	ANSEL = ANSELH =0;
+	//set cac cong output dieu chinh PWM
+	TRISC1=0;
+	TRISC2=0;
+	//set cac cong dao chieu dong co
+	TRISC5=0;
+	TRISC4=0;
+	PR2=124;   // chu ky pwm
+	T2CKPS1 = 0;  // prescale
+	T2CKPS0 = 1;
+	CCP1CON=0b00001100;///su dung tinh nang pwm muc thap ||0x0C->0b00001100: muc cao
+	CCPR1L= 100 ;  // set duty cycle  80%
+	TMR2ON=1;
+	RC5=0;
+	RC4=1;
+
+
+
+
+TRISA4 = 1; // input
+dem = 0;
+xung = 0;
+
+T0CS = 1;   // counter
+T0SE = 1;
+
+PSA = 1;
+
+//PS2 = 0;
+//PS1 = 0;
+//PS0 = 1;
+
+T0IE = 1;
+T0IF = 0;
+GIE = 1;
+
+TMR0 =0;
+	while(1)
+	{
+	
+   
+    __delay_ms(1000);
+    xung= dem*256 + TMR0;
+    TMR0 = 0;
+    dem = 0;
+
+
+	lcd_gotoxy(0,0);
+	printf("xung: %04d",xung);
+    v =  (xung/360.0)*60.0;  
+
+    lcd_gotoxy(0,1);
+	printf("v: %03.2f",v);
+
+    
+	}
+}
+
+void interrupt ngat()
+{
+	if(T0IF && T0IE)
+	{
+		dem++;
+	}
+	T0IF = 0;
+
+}
+
+void putch(char c)
+	{lcd_putc(c);}

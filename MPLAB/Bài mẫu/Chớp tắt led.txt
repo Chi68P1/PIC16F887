@@ -1,0 +1,84 @@
+Bài 1:  Chớp tắt LED đơn thạch anh  ngoại 20MHZ
+
+#include<htc.h>
+#include<stdio.h>
+#define _XTAL_FREQ  20000000
+
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+
+void main()
+{
+ANSEL= ANSELH = 0 ;
+
+TRISA3=0;
+while(1)
+{
+	RA3=0;
+	__delay_ms(200);
+	RA3=1;
+	__delay_ms(200);	
+}
+return;	
+}
+
+
+Bài 2 Chớp tắt LED thạch anh nội 4MHZ
+
+#include<htc.h>
+#include<stdio.h>
+#define _XTAL_FREQ  4000000
+
+__CONFIG(FOSC_INTRC_CLKOUT & WDTE_OFF & PWRTE_ON & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+
+void main()
+{
+ANSEL= ANSELH = 0 ;
+
+TRISA3=0;
+while(1)
+{
+	RA3=0;
+	__delay_ms(200);
+	RA3=1;
+	__delay_ms(200);	
+}
+return;	
+}
+
+Bài 3 Nhấn nút chớp tắt LED
+
+#include<htc.h>
+#include<stdio.h>
+#define _XTAL_FREQ  20000000
+
+__CONFIG(FOSC_HS  & WDTE_OFF & PWRTE_OFF & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_OFF & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+
+
+
+void main()
+{
+	ANSEL= ANSELH = 0 ;
+    	\\nRBPU = 0;
+    	\\WPUB = 0xFF;
+	TRISA3=0;
+	TRISB0 =1;
+	INTE=1 ;
+	INTF= 0;
+	INTEDG=0 ;
+	GIE=1;
+	while(1);
+return;
+}
+void interrupt ngat() 
+{
+	if(INTF == 1 )
+	{
+		RA3 =! RA3;
+		__delay_ms(300);	
+		INTF = 0;
+	}
+
+}	

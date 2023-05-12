@@ -1,0 +1,222 @@
+Bài 1  Đếm từ 0 - 9
+#include<htc.h>
+#include<stdio.h>
+#define _XTAL_FREQ 20000000
+
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+
+unsigned int a;
+char hexvalue[10]= {0xC0,0xF9,0xA4,0xB0,0x99,0x92,0x82,0xF8,0x80,0x90};
+void Hien_thi(unsigned int n)
+{
+	a = n%10;
+	PORTC = hexvalue[a];
+}
+
+void main()
+{
+	ANSEL = ANSELH = 0;
+    	nRBPU = 0;
+   	WPUB = 0xFF;
+	TRISC = 0x00;
+	PORTC = 0X00;
+	TRISB0 = 1;
+	INTE = 1;
+	INTF = 0;
+	INTEDG = 0;
+	GIE = 1;
+
+	while(1)
+	{
+	}
+	return;
+}
+void interrupt ngat()
+{
+    if (INTF==1 )
+    {
+        for (unsigned int i=0;i<=9;i++)
+    {
+        Hien_thi(i);
+   		__delay_ms(1000);
+		if(i==9) i=-1 ;
+
+    }
+        __delay_ms(2000); 
+		INTF=0;
+    }
+}
+
+Bài 2  Đếm từ 00 - 99
+#include<htc.h>
+#include<stdio.h>
+#define _XTAL_FREQ 20000000
+
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+
+unsigned int a,b;
+char hexvalue[10]= {0xC0,0xF9,0xA4,0xB0,0x99,0x92,0x82,0xF8,0x80,0x90};
+void Hien_thi(unsigned int n)
+{
+	a = n / 10;
+	b = n %10 ;
+	PORTD = hexvalue[b];
+	PORTC = hexvalue[a];
+}
+
+void main()
+{
+	ANSEL = ANSELH = 0;
+  	nRBPU = 0;
+   	WPUB = 0xFF;
+	TRISC = 0x00;
+	PORTC = 0X00;
+	TRISD = 0x00;
+	PORTD = 0x00;
+	TRISB0 = 1;
+	INTE = 1;
+	INTF = 0;
+	INTEDG = 0;
+	GIE = 1;
+	while(1)
+	{
+	}
+	return;
+}
+void interrupt ngat()
+{
+    if (INTF==1 )
+    {
+        for (unsigned int i=0;i<=99;i++)
+    {
+        Hien_thi(i);
+        __delay_ms(500);  
+        if(i==99) i=-1;
+    }
+        __delay_ms(20);
+        INTF=0;
+    }
+}
+
+Bài 3 Nhấn nút tăng giảm
+#include<htc.h>
+#include<stdio.h>
+#define _XTAL_FREQ 20000000
+
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+
+unsigned int a,b,i= 0;
+char hexvalue[10]= {0xC0,0xF9,0xA4,0xB0,0x99,0x92,0x82,0xF8,0x80,0x90};
+bit b2,b3;
+void Hien_thi(unsigned int n)
+{
+	a = n / 10;
+	b = n %10 ;
+	PORTD = hexvalue[b];
+	PORTC = hexvalue[a];
+}
+
+void main()
+{
+	ANSEL = ANSELH = 0;
+  	nRBPU = 0;
+   	WPUB = 0xFF;
+	TRISC = 0x00;
+	PORTC = 0X00;
+
+	TRISD = 0x00;
+	PORTD = 0x00;
+
+	TRISB2 = TRISB3 = 1;
+
+	b2 = RB2; b3 = RB3;
+	IOCB2 = IOCB3 = 1;
+	RBIE = 1;
+	RBIF = 0;
+	GIE = 1;
+
+	while(1)
+	{
+		Hien_thi(i);
+	
+	}
+	return;
+}
+void interrupt ngat()
+{
+    if (RBIF==1)
+    {
+        if(b2 != RB2)
+			{
+				i++;
+
+				
+			}
+		if(b3 != RB3)
+			{
+				i--;
+
+				
+			} 
+    }
+	__delay_ms(200);
+    RBIF=0;
+}
+
+Bài 4 Hiển thị LCD
+#include<htc.h>
+#include<stdio.h>
+#define _XTAL_FREQ 2000000
+#include "lcd(16).h"
+
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+
+unsigned char ma7doan[10]= {0xC0,0xF9,0xA4,0xB0,0x99,0x92,0x82,0xF8,0x80,0x90};
+unsigned int dem;
+bit b2,b3;
+
+void main()
+{
+	lcd_init();
+	ANSEL = ANSELH = 0;
+  	nRBPU = 0;
+   	WPUB = 0xFF;
+	//////on-change
+	TRISB2 = TRISB3 = 1;
+
+	b2 = RB2; b3 = RB3;
+	IOCB2 = IOCB3 = 1;
+	RBIE = 1;
+	RBIF = 0;
+	GIE = 1;
+
+	TRISC = 0x00;
+	PORTC = 0x00;
+	while(1)
+	{
+		lcd_gotoxy(0,0);
+		printf("so lan nhan nut");
+
+		lcd_gotoxy(0,1);
+		printf("%02d", dem);
+	}
+
+}
+void interrupt ngat()
+{
+	__delay_ms(20);
+	if(RBIE && RBIF)
+	{
+		if(b2 != RB2)
+			{dem++;}
+		else if(b3 != RB3)
+			{dem--;}
+	}
+	RBIF = 0; // reset IOCB flag
+}
+void putch (char ki_tu)
+	{lcd_putc(ki_tu);}

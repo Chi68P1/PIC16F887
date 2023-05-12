@@ -1,0 +1,57 @@
+#include<htc.h>
+#include<stdio.h>
+#include<math.h>
+#include "lcd(16).h"
+#define _XTAL_FREQ 8000000
+
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+
+unsigned int dem=0;
+
+void main()
+{
+	
+	/// THIET LAP NGO RA VA LCD
+	ANSEL = ANSELH=0;
+	lcd_init();
+
+    TRISE2 = 0; 
+    T2CKPS1 = 0;  // prescale 1:4
+	T2CKPS0 = 1;
+
+	TOUTPS3 = 0; // postscaler 1:4
+    TOUTPS2 = 0;
+	TOUTPS1 = 1;
+	TOUTPS0 = 1;
+
+	TMR2IE = 1;  //ngat timer 2
+	TMR2IF = 0;
+	PEIE = 1;
+	GIE = 1;
+
+	PR2 = 99;
+
+  ////enable timter 2
+    TMR2ON = 1;
+	
+	while(1)
+		{
+		}
+	}
+
+void interrupt ngat()
+	{	if(TMR2IF && TMR2IE)
+		{	
+			dem++;
+			if(dem==40) //200.20%=40
+				{RE2=0;}
+			else if(dem==200)
+				{RE2=1;
+				dem=0;}
+			}
+        PR2 = 99; // dat lai thanh ghi timer 2
+		TMR2IF = 0; // clear flag int
+		
+		
+}

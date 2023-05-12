@@ -1,0 +1,113 @@
+#include<htc.h>
+#include<stdio.h>
+#include<math.h>
+#include<stdlib.h>
+#include<string.h>
+#define _XTAL_FREQ 20000000
+#include "lcd(16).h"
+
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+
+char rxdata;
+unsigned int dem, i;
+
+void sendchar (char c);
+void sendstring (const char* s);
+void tx_init();
+void rx_init();
+
+char buffer[6];
+char ptr;
+
+void main() 
+{
+lcd_init();
+
+ANSEL = ANSELH =0;
+TRISA3 = TRISA4 = 0;
+RA3 = RA4 = 1;
+
+tx_init();
+rx_init();
+			
+while(1)
+{  
+
+	lcd_gotoxy(0,0);
+	printf(buffer);
+//return;
+}
+}
+
+
+void sendchar (char c){		
+	while (TXIF==0){}
+	TXREG = c;
+}
+
+void sendstring (const char* s){
+	while(*s){
+		sendchar(*s++);
+	}
+}
+void tx_init(){
+	SPBRGH =0x02; 
+	SPBRG = 0x08;	
+	BRGH=1;
+	BRG16= 1;
+	
+	SYNC=0;
+	SPEN=1;
+	
+	TX9=0;
+	
+	TXEN=1;
+}
+void rx_init(){
+
+	SPBRGH =0x02;  // calculate --> 520 <-> br:9600
+	SPBRG = 0x08;	
+	BRGH=1;
+	BRG16= 1;
+	
+	SYNC=0;
+	SPEN=1;
+	
+	RCIF=0;
+	RCIE=1;
+	PEIE=1;
+	GIE=1;
+	
+	RX9=0;
+	
+	CREN=1;	
+}
+
+
+void interrupt ngat()
+{
+	if( RCIE && RCIF)
+	{
+		
+	
+	//for(int i=0; i<1; i++)
+   	//{	
+		rxdata=RCREG;
+		buffer[i] = rxdata;
+		i++;
+		
+	//}
+
+	}  
+	//// kiem tra loi
+	if( OERR==1)
+	{
+	  CREN=0;/// de xoa loi
+	  CREN=1;/// cho hoat dong lai		
+	}
+ RCIF=0;
+}
+void putch(char c){
+lcd_putc(c);
+}

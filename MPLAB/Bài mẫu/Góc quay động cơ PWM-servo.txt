@@ -1,0 +1,81 @@
+#include<htc.h>
+#include<stdio.h>
+#include<math.h>
+#include "lcd(16).h"
+#define _XTAL_FREQ 20000000
+
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+
+unsigned int dem,set;
+
+
+void goc_quay(int deg);
+void main()
+
+{
+ANSEL = ANSELH =0;
+lcd_init();
+TRISE0=0;
+RE0=0;
+	TRISB2 = 1; //input
+	IOCB2=1;
+ 
+	RBIE=1;
+	RBIF=0;
+//Tính toán bo chia Prescaler , Postscaler
+
+T2CKPS1=0; T2CKPS0=0;//prescaler 1:1
+TOUTPS3=0; TOUTPS2=0;
+TOUTPS1=0; TOUTPS0=0;//postscaler 1:1
+
+PR2=49;
+TMR2=0;
+
+
+TMR2IE=1;
+TMR2IF=0;
+PEIE=1;
+GIE=1; 
+
+TMR2ON=1;
+	while(1)
+{
+	goc_quay(40);
+
+	__delay_ms(100); //THAY XEM GIUP EM CAI DELAY SAO NO KHÔNG RA DUNG Ý EM Á
+					// EM DE 1000ms THI K RA DUNG 1s Á THAY
+	goc_quay(90);
+	
+	__delay_ms(100);
+	goc_quay(120);
+	
+	__delay_ms(100);
+	goc_quay(180);
+
+	__delay_ms(100);
+}
+}
+
+void goc_quay(int deg)
+{
+		set = ((1000.0/180.0)*deg+1000.0)/10;	
+}
+
+void interrupt ngat()
+{
+	if(TMR2IF&&TMR2IE)
+	{
+	
+		dem++; 
+
+		if (dem == set) {RE0=0;}
+		else if (dem==2000) {RE0=1;dem=0;}
+	}
+	TMR2IF=0;
+}	
+
+void putch(char c)
+{	
+	lcd_putc(c);		
+}

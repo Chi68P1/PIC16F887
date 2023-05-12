@@ -1,0 +1,89 @@
+
+
+#include<htc.h>
+#include<stdio.h>
+#include <math.h>
+#include <stdlib.h>
+
+#define _XTAL_FREQ 4000000
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_ON & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+
+
+int   ADC_val    = 0;
+float result_out = 0;
+float temp_value = 0;
+int   digit1 = 0;
+int   digit2 = 0;
+char  numstr[30];
+
+char Com_Cathode[10] = {0b00111111, 0b00000110, 0b01011011, 0b01001111, 0b01100110, 
+                        0b01101101, 0b01111101, 0b00000111, 0b01111111, 0b01101111};
+
+void LEDdisplay(int dig1, int dig2){
+    // Led 1 
+    PORTC = Com_Cathode[dig1];
+    RD0 = 0; RD1 = 1;
+    __delay_ms(60);
+    
+    // Led 2
+    PORTC = Com_Cathode[dig2];
+    RD1 = 0; RD0 = 1;
+    __delay_ms(60);
+    
+    return;    
+}
+
+
+void main(void) {
+    // Initialize
+        // Oscillation
+    IRCF2 = 1;
+    IRCF1 = 1;
+    IRCF0 = 0;
+    SCS   = 1;
+    
+        // Ports
+    TRISA1 = 1;   // Input
+    ANS1   = 1;   // Analog use on pin RA1
+    TRISC            = 0;   // Output
+    TRISD0 = 0;   // Output on RD0 pin
+    TRISD1 = 0;   // Output on RD1 pin
+
+        // ADC Converter
+    ADCS1 = 1;
+    ADCS0 = 0;
+    VCFG0 = 0;   // Internal Vdd Reference
+    VCFG1 = 0;   // Vss = GND
+    CHS3  = 0;
+    CHS2  = 0;
+    CHS1  = 0;
+    CHS0  = 1;
+    ADFM  = 1;   // Right Justified Result
+    ADON  = 1;   // Enable ADC module
+ 
+    GO_DONE = 1; // Start Converting
+    
+    while(1){
+        // Wait for calculation
+        __delay_ms(5);
+     
+		while(GO_DONE==1){
+            // Wait
+            
+        }
+        
+        // Read Data value
+        ADC_val     = ADRESH*256 + ADRESL;	
+        result_out  = (float)(ADC_val/1023.0)*5.0;
+        
+        digit1 = result_out;
+        digit2 = (result_out - (int)result_out)*10;
+        
+        LEDdisplay(digit1, digit2);
+
+        ADCON0bits.GO_DONE=1;
+ 
+    }
+    return;
+}

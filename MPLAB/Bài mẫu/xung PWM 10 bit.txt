@@ -1,0 +1,42 @@
+#include<htc.h>
+#include<stdio.h>
+#include<math.h>
+#define _XTAL_FREQ 20000000
+#include "lcd(16).h"
+
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+
+unsigned int dem;
+
+void load_pwm_10bit(unsigned int VAL)
+{
+	// 10 bit
+	CCPR1L = VAL/4;  // 
+	DC1B1 = 0;
+	DC1B0 = 0;
+	if ((VAL & 1)==1) DC1B0=1;
+	if ((VAL & 2)==2) DC1B1=1;
+	//8 bit 
+	//CCPR1L = VAL;
+	TMR2ON=1;
+}
+
+void main() 
+{
+	lcd_init();
+	ANSEL = ANSELH =0;
+	TRISC2=0;  // output
+	PR2=249;   // chu ky pwm
+	T2CKPS1 = 0;  // prescale
+	T2CKPS0 = 0;
+	CCP1CON=0b00001100;///su dung tinh nang pwm muc thap ||0x0C->0b00001100: muc cao
+	CCPR1L= 124;    // set duty cycle  50%
+	TMR2ON=1;
+while(1)
+{
+	__delay_ms(10);
+	dem++;
+	load_pwm_10bit(dem);
+}
+}

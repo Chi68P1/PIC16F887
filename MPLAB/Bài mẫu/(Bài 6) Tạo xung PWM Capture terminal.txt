@@ -1,0 +1,138 @@
+#include<htc.h>
+#include<stdio.h>
+#include<math.h>
+#include "lcd(16).h"
+#include <stdlib.h> 
+#include <string.h>
+#define _XTAL_FREQ 20000000
+
+__CONFIG(FOSC_HS & WDTE_OFF & PWRTE_ON & MCLRE_OFF & CP_OFF & CPD_OFF 
+ & BOREN_ON & IESO_OFF & FCMEN_OFF & LVP_OFF & DEBUG_OFF);
+
+
+char rxdata;
+
+char chuoi[10]; //Khai bao mang chuoi gom 10 phan tu de nhan cong don chuoi lai
+char chuoi1[10];
+char ptr;	//Khai bao bien con tro de xu ly chuoi
+
+
+void sendchar (char c);
+void sendstring (const char* s);
+unsigned int dem;
+long int CCPR1_old = 0;
+long float t, tan_so;
+
+void main()
+{	
+	/// THIET LAP NGO RA VA LCD
+	ANSEL = ANSELH=0;
+	lcd_init();
+
+// toc do baud 9600
+	BRGH = 1;
+	BRG16 = 1;
+	
+	SPBRGH=0X02;
+	SPBRG=0X08;
+	////////////////
+	//==== KHOI DONG BO TRUYEN BAT DONG BO ========
+	SYNC = 0;
+	SPEN=1;
+	////////////////
+	//==== THIET LAP NGAT NHAN ====================
+	RCIF=0;
+	RCIE=1;
+	PEIE=1;
+	GIE=1;
+	
+	////////////////
+	//==== KHONG TRUYEN NHAN 9 BIT ================
+	TX9=0;
+	RX9=0;
+	
+	///////////////
+	//==== CHO PHEP TRUYEN VA NHAN ================
+	TXEN=1;
+	CREN=1;
+
+    //// config timer 1 - counter
+    TRISC2 = 1; //input CCP1
+	////enable timter 1
+    TMR1ON = 1;
+	
+	TMR1CS = 0;
+	T1CKPS1 = 0;  ///1:1
+	T1CKPS0 = 0;
+	T1SYNC=1;		// KHONG DONG BO
+	
+	TMR1GE= 0;		// KHONG DUNG CONG GATE DIEU KHIEN
+	TMR1H = 0;
+	TMR1L = 0;
+	
+	////KHOI TAO CCP1
+	CCP1CON = 0b00000111;
+	CCPR1H = CCPR1L = 0;
+
+  	/// config interrupt CCP1
+	CCP1IE = 1;
+    CCP1IF = 0;
+	PEIE = 1;
+	GIE = 1;
+	
+	/// Tao xung PWM
+	
+	TRISC1=0;  // output
+	PR2=249;   // chu ky pwm
+	T2CKPS1 = 0;  // prescale
+	T2CKPS0 = 0;
+	//CCP1CON=0b00001100;///su dung tinh nang pwm muc thap ||0x0C->0b00001100: muc cao
+	CCP2CON=0b00001100;
+	//CCPR1L= 125;    // set duty cycle  
+	CCPR2L= 125;	// set duty cycle  50%
+	TMR2ON=1;
+	while(1)
+		{
+			t = dem/(5000000.0*16.0);
+			tan_so = 1/t;
+			lcd_gotoxy(0,0);
+			printf("f:%3.2f",tan_so);
+			sprintf(chuoi,"%3.2f",tan_so);
+			sendstring("\n");	
+			sendstring(chuoi);
+		}
+}
+void sendchar (char c){
+	while (TXIF==0){}
+	TXREG = c;
+}
+void sendstring (const char* s){
+	while(*s){
+	sendchar(*s++);
+	}
+}
+void interrupt ngat()
+	{	
+
+	if (RCIF && RCIE)
+	    {
+			// NHAN KY TU	
+			rxdata=RCREG;
+			
+			// GUI NGUOC LEN
+			
+	        chuoi[ptr] = rxdata;		
+	        ptr++;
+		}
+	
+	if(CCP1IF && CCP1IE)
+			{	
+				dem=CCPR1 - CCPR1_old;
+				CCPR1_old=CCPR1;
+			}
+			CCP1IF = 0; // clear flag int
+			
+	}
+void putch(char c){	
+	lcd_putc(c);		
+}
